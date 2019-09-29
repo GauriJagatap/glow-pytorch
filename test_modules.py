@@ -130,7 +130,7 @@ def test_flow_net():
 def test_glow():
     print("[Test]: Glow")
     from glow.config import JsonConfig
-    glow = models.Glow(JsonConfig("hparams_celeba.json"))
+    glow = models.Glow(JsonConfig("hparams/celeba.json"))
     img = cv2.imread("tsuki.jpeg")
     img = cv2.resize(img, (64, 64))
     img = (img / 255.0).astype(np.float32)
