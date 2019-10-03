@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 from tqdm import tqdm
 from . import thops
-from . import modules
+from . import modules_new as modules
 from . import utils
 
 
@@ -55,6 +55,8 @@ class FlowStep(nn.Module):
 
     def forward(self, input, logdet=None, reverse=False):
         if not reverse:
+            #print('input of FlowStep:', input.shape)
+            #print('logdet:', logdet)
             return self.normal_flow(input, logdet)
         else:
             return self.reverse_flow(input, logdet)
@@ -62,6 +64,7 @@ class FlowStep(nn.Module):
     def normal_flow(self, input, logdet):
         assert input.size(1) % 2 == 0
         # 1. actnorm
+        #---->
         z, logdet = self.actnorm(input, logdet=logdet, reverse=False)
         # 2. permute
         z, logdet = FlowStep.FlowPermutation[self.flow_permutation](
@@ -147,12 +150,16 @@ class FlowNet(nn.Module):
 
     def forward(self, input, logdet=0., reverse=False, eps_std=None):
         if not reverse:
+            #print('input of FlowNet:', input.shape)
+            #print('logdet:', logdet)
             return self.encode(input, logdet)
         else:
             return self.decode(input, eps_std)
 
     def encode(self, z, logdet=0.0):
         for layer, shape in zip(self.layers, self.output_shapes):
+            #print('z:', input)
+            #print('logdet:', logdet)
             z, logdet = layer(z, logdet, reverse=False)
         return z, logdet
 
@@ -227,6 +234,8 @@ class Glow(nn.Module):
         logdet = torch.zeros_like(x[:, 0, 0, 0])
         logdet += float(-np.log(256.) * pixels)
         # encode
+        #print('z shape:',z.shape)
+        #print('logdets:', logdet)
         z, objective = self.flow(z, logdet=logdet, reverse=False)
         # prior
         mean, logs = self.prior(y_onehot)

@@ -50,7 +50,7 @@ class Trainer(object):
         self.data_loader = DataLoader(dataset,
                                       batch_size=self.batch_size,
                                     #   num_workers=8,
-                                      shuffle=True,
+                                      shuffle=False,
                                       drop_last=True)
         self.n_epoches = (hparams.Train.num_batches+len(self.data_loader)-1)
         self.n_epoches = self.n_epoches // len(self.data_loader)
@@ -80,6 +80,8 @@ class Trainer(object):
             print("epoch", epoch)
             progress = tqdm(self.data_loader)
             for i_batch, batch in enumerate(progress):
+                print('epoch no.',epoch,', batch no.',i_batch, end='\r')
+
                 # update learning rate
                 lr = self.lrschedule["func"](global_step=self.global_step,
                                              **self.lrschedule["args"])
@@ -113,7 +115,7 @@ class Trainer(object):
                     self.graph = torch.nn.parallel.DataParallel(self.graph, self.devices, self.devices[0])
                 # forward phase
                 z, nll, y_logits = self.graph(x=x, y_onehot=y_onehot)
-
+                print(nll)
                 # loss
                 loss_generative = Glow.loss_generative(nll)
                 loss_classes = 0
@@ -122,8 +124,10 @@ class Trainer(object):
                                     if self.y_criterion == "multi-classes" else
                                     Glow.loss_class(y_logits, y))
                 if self.global_step % self.scalar_log_gaps == 0:
+                    print("loss generative:",loss_generative)
                     self.writer.add_scalar("loss/loss_generative", loss_generative, self.global_step)
                     if self.y_condition:
+                        print("loss classes:", loss_classes)
                         self.writer.add_scalar("loss/loss_classes", loss_classes, self.global_step)
                 loss = loss_generative + loss_classes * self.weight_y
 
@@ -137,6 +141,7 @@ class Trainer(object):
                 if self.max_grad_norm is not None and self.max_grad_norm > 0:
                     grad_norm = torch.nn.utils.clip_grad_norm_(self.graph.parameters(), self.max_grad_norm)
                     if self.global_step % self.scalar_log_gaps == 0:
+                        print("grad norm:",grad_norm)
                         self.writer.add_scalar("grad_norm/grad_norm", grad_norm, self.global_step)
                 # step
                 self.optim.step()

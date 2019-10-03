@@ -10,7 +10,11 @@ from torchvision import transforms
 from glow.builder import build
 from glow.trainer import Trainer
 from glow.config import JsonConfig
-
+import random
+import torch
+import numpy as np
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
 
 if __name__ == "__main__":
     args = docopt(__doc__)
@@ -30,6 +34,11 @@ if __name__ == "__main__":
         transforms.CenterCrop(hparams.Data.center_crop),
         transforms.Resize(hparams.Data.resize),
         transforms.ToTensor()])
+    # fix random seed
+    random.seed(42)
+    torch.manual_seed(42)
+    torch.cuda.manual_seed(42)
+    np.random.seed(30)
     # build graph and dataset
     built = build(hparams, True)
     dataset = dataset(dataset_root, transform=transform)
